@@ -2,6 +2,7 @@ import fs from 'fs'
 import { PAGE_LIMIT } from '../constants.mjs'
 import { getFromDB } from './database.mjs'
 import { getCategories } from './categories.mjs'
+import { logger } from './logger.mjs'
 
 /**
  * @typedef {Object} Results
@@ -18,13 +19,13 @@ export async function getModels(args) {
   const category = args.category
   const offset = args.page * PAGE_LIMIT
 
-  console.log("Category: " + category)
-  console.log("Offset: " + offset)
+  logger.info(`Request to DB started with arguments: Category - ${category}, Offset - ${offset}`)
 
   let modelsQuery = `SELECT * FROM 'Models'`
   if (category != undefined) {
     modelsQuery += ` WHERE category = '${category}'`
   }
+  modelsQuery += ` ORDER BY date DESC`
   modelsQuery += ` LIMIT 50 OFFSET ${offset}`
 
   let models = await getFromDB(modelsQuery)
@@ -39,7 +40,7 @@ export async function getModels(args) {
     model.variations = JSON.parse(model.variations)
     return model
   })
-
+  logger.info(`Request to DB finished`)
   return result
 }
 

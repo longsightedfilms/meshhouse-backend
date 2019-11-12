@@ -5,6 +5,7 @@ import bodyParser from 'body-parser'
 import { getCategories } from './modules/categories.mjs'
 import { getModels, getSingleModel } from './modules/models.mjs'
 import { __dirname } from './constants.mjs'
+import { logger } from './modules/logger.mjs'
 
 const jsonParser = bodyParser.json
 const app = express()
@@ -54,5 +55,5 @@ app.use(function (req, res, next) {
 });
 
 app.listen(80, () => {
-    console.log(`Server started on port 80`);
+    logger.info('Server started on port 80')
 });
