@@ -18,13 +18,15 @@ import { logger } from './logger.mjs'
 export async function getModels(args) {
   const category = args.category
   const offset = args.page * PAGE_LIMIT
+  const query = args.query
 
-  logger.info(`Request to DB started with arguments: Category - ${category}, Offset - ${offset}`)
+  logger.info(`Request to DB started with arguments: Category - ${category}, Offset - ${offset}, Query params - ${JSON.stringify(query)}`)
 
   let modelsQuery = `SELECT * FROM 'Models'`
-  if (category != undefined) {
+  modelsQuery += dynamicQueryBuilder({ category: category, ...query })
+  /*if (category != undefined) {
     modelsQuery += ` WHERE category = '${category}'`
-  }
+  }*/
   modelsQuery += ` ORDER BY date DESC`
   modelsQuery += ` LIMIT 50 OFFSET ${offset}`
 
@@ -55,4 +57,38 @@ export async function getSingleModel(args) {
   let model = await getFromDB(`SELECT * FROM 'Models' WHERE slug = '${slug}'`)
   model[0].variations = JSON.parse(model[0].variations)
   return model
+}
+
+/**
+ * Dynamic SQL query builder if user set filters
+ * @param params - query object
+ */
+function dynamicQueryBuilder(params) {
+  let query = ''
+  let clause = ''
+  const paramsEmpty = []
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== '' && value !== 'all' && value !== 'none' && value !== null && value !== undefined) {
+      paramsEmpty.push(true)
+      if (key === 'name') {
+        clause += `${key} LIKE '%${value}%'`
+      } else if (key === 'dcc') {
+        clause += `json_extract(value, '$.${key}') = '${value}'`
+      } else {
+        clause += `${key} = '${value}'`
+      }
+      clause += ` AND `
+    } else {
+      paramsEmpty.push(false)
+    }
+  }
+  clause = clause.substr(0, clause.length - 5)
+  if(params.dcc !== '') {
+    query = ', json_each(Models.variations)'
+  }
+  if (paramsEmpty.includes(true) !== false) {
+    query += ' WHERE ' + clause
+  }
+  return query
 }
