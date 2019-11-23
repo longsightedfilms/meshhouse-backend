@@ -6,6 +6,7 @@ import { getCategories } from './modules/categories.mjs'
 import { getModels, getSingleModel } from './modules/models.mjs'
 import { __dirname } from './constants.mjs'
 import { logger } from './modules/logger.mjs'
+import config from './config.json'
 
 const jsonParser = bodyParser.json
 const app = express()
@@ -54,6 +55,6 @@ app.use(function (req, res, next) {
     });
 });
 
-app.listen(80, () => {
-    logger.info('Server started on port 80')
+app.listen(config.server_port, () => {
+    logger.info(`Server started on port ${config.server_port}`)
 });
