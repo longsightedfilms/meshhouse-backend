@@ -23,23 +23,25 @@ export async function getModels(args) {
   logger.info(`Request to DB started with arguments: Category - ${category}, Offset - ${offset}, Query params - ${JSON.stringify(query)}`)
 
   let modelsQuery = `SELECT * FROM 'Models'`
-  modelsQuery += dynamicQueryBuilder({ category: category, ...query })
-  /*if (category != undefined) {
-    modelsQuery += ` WHERE category = '${category}'`
-  }*/
+  modelsQuery += dynamicQueryBuilder({ categoryId: category, ...query })
   modelsQuery += ` ORDER BY date DESC`
   modelsQuery += ` LIMIT 50 OFFSET ${offset}`
 
   let models = await getFromDB(modelsQuery)
   let categories = await getCategories()
+  let allModels = await getFromDB(`SELECT * FROM 'Models'`)
 
   let result = {
     models: models,
+    modelsLength: allModels.length,
     categories: categories
   }
 
   result.models = result.models.map((model) => {
-    model.variations = JSON.parse(model.variations)
+    model.info = JSON.parse(model.info)
+    model.links = JSON.parse(model.links)
+    model.tags = JSON.parse(model.tags)
+    model.images = JSON.parse(model.images)
     return model
   })
   logger.info(`Request to DB finished`)
@@ -48,14 +50,17 @@ export async function getModels(args) {
 
 /**
  * Get single model information from DB
- * 
+ *
  * @param {Array.<string>} slug - Model slug
  * @return {Object} Model object
  */
 export async function getSingleModel(args) {
   const slug = args[0]
   let model = await getFromDB(`SELECT * FROM 'Models' WHERE slug = '${slug}'`)
-  model[0].variations = JSON.parse(model[0].variations)
+  model[0].info = JSON.parse(model[0].info)
+  model[0].links = JSON.parse(model[0].links)
+  model[0].tags = JSON.parse(model[0].tags)
+  model[0].images = JSON.parse(model[0].images)
   return model
 }
 
@@ -72,9 +77,13 @@ function dynamicQueryBuilder(params) {
     if (value !== '' && value !== 'all' && value !== 'none' && value !== null && value !== undefined) {
       paramsEmpty.push(true)
       if (key === 'name') {
-        clause += `${key} LIKE '%${value}%'`
+        clause += `${key} LIKE '%${value}%' OR (SELECT tags from 'Models', json_each(tags)) LIKE '%${value}%'`
       } else if (key === 'dcc') {
         clause += `json_extract(value, '$.${key}') = '${value}'`
+      } else if (key === 'categoryId') {
+        clause += `${key} = ${value} OR ${key} IN (SELECT id FROM 'Categories' WHERE Categories.parentId IN (
+          SELECT parentId FROM 'Categories' WHERE parentId = ${value})
+        )`
       } else {
         clause += `${key} = '${value}'`
       }
@@ -85,7 +94,7 @@ function dynamicQueryBuilder(params) {
   }
   clause = clause.substr(0, clause.length - 5)
   if(params.dcc !== '') {
-    query = ', json_each(Models.variations)'
+    query = ', Models.info'
   }
   if (paramsEmpty.includes(true) !== false) {
     query += ' WHERE ' + clause

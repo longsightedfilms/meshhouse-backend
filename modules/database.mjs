@@ -3,7 +3,8 @@ import sqlite3 from 'sqlite3'
 import { __dirname } from '../constants.mjs'
 import { logger } from './logger.mjs'
 
-const db = new sqlite3.cached.Database(path.resolve(`${__dirname}/db/`, 'meshhouse.sqlite3'))
+const dbPath = path.normalize(`./db/meshhouse.sqlite3`)
+const db = new sqlite3.cached.Database(path.resolve(dbPath))
 
 export async function getFromDB(query) {
   return new Promise((resolve, reject) => {

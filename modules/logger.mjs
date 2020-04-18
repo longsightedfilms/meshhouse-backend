@@ -6,8 +6,8 @@ export const logger = winston.createLogger({
   format: winston.format.json(),
   defaultMeta: { service: 'meshhouse-api' },
   transports: [
-    new winston.transports.File({ filename: `${__dirname}/logs/error.log`, level: 'error' }),
-    new winston.transports.File({ filename: `${__dirname}/logs/logs.log`, level: 'info' }),
+    // new winston.transports.File({ filename: `${__dirname}/logs/error.log`, level: 'error' }),
+    // new winston.transports.File({ filename: `${__dirname}/logs/logs.log`, level: 'info' }),
     new winston.transports.Console({
       level: 'info',
       format: winston.format.combine(
